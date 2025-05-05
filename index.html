@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Riddle Generator!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Base Styles & CSS Variables --- */
+        :root {
+            /* Default Theme (Riddle Green/Orange) */
+            --bg-color: #F0FFF4; /* green-50 */
+            --main-container-bg: #ffffff;
+            --main-container-border: #DD6B20; /* orange-600 */
+            --main-container-shadow: #DD6B20;
+            --card-bg: #FFF5EB; /* orange-50 */
+            --card-border: #FBD38D; /* orange-300 */
+            --card-shadow: #F6AD55; /* orange-400 */
+            --input-bg: #ffffff;
+            --input-border: #FBD38D; /* orange-300 */
+            --input-text: #2D3748; /* gray-800 */
+            --input-focus-ring: #48BB78; /* green-500 */
+            --action-button-text: white;
+            --action-button-border: #C05621; /* orange-700 */
+            --action-button-shadow: #C05621;
+            --action-button-hover-shadow: #9C4221; /* orange-800 */
+            --action-button-active-shadow: #C05621;
+            --submit-button-bg: #48BB78; /* green-500 */
+            --submit-button-hover-bg: #38A169; /* green-600 */
+            --submit-button-active-bg: #2F855A; /* green-700 */
+            --giveup-button-bg: #F56565; /* red-500 */
+            --giveup-button-hover-bg: #E53E3E; /* red-600 */
+            --giveup-button-active-bg: #C53030; /* red-700 */
+            --next-button-bg: #4299E1; /* blue-500 */
+            --next-button-hover-bg: #3182CE; /* blue-600 */
+            --next-button-active-bg: #2B6CB0; /* blue-700 */
+            --result-area-bg: #FFF5EB; /* orange-50 */
+            --result-area-border: #FBD38D; /* orange-300 */
+            --result-area-shadow: #F6AD55; /* orange-400 */
+            --result-text-color: #9C4221; /* orange-800 */
+            --explanation-text-color: #AE571A; /* orange-700 */
+            --correct-text-color: #2F855A; /* green-700 */
+            --incorrect-text-color: #C53030; /* red-700 */
+            --thinking-text-color: #DD6B20; /* orange-600 */
+            --heading-color: #2F855A; /* green-700 */
+            --subheading-color: #DD6B20; /* orange-600 */
+            --puzzle-text-color: #2D3748; /* gray-800 */
+            --label-color: #2F855A;
+            --footer-text-color: #718096; /* gray-600 */
+            --focus-ring-color: var(--submit-button-bg);
+            --theme-selector-bg: #FFF5EB;
+            --theme-selector-border: #FBD38D;
+            --theme-selector-text: #DD6B20;
+        }
+
+        /* --- Theme Definitions --- */
+        body[data-theme="ocean-blue"] { --bg-color: #E0F2FE; --main-container-bg: #ffffff; --main-container-border: #075985; --main-container-shadow: #075985; --card-bg: #CFFAFE; --card-border: #67E8F9; --card-shadow: #22D3EE; --input-bg: #FFF; --input-border: #67E8F9; --input-text: #083344; --input-focus-ring: #38BDF8; --action-button-border: #075985; --action-button-shadow: #075985; --action-button-hover-shadow: #075985; --action-button-active-shadow: #075985; --submit-button-bg: #38BDF8; --submit-button-hover-bg: #0EA5E9; --submit-button-active-bg: #0284C7; --giveup-button-bg: #FB7185; --giveup-button-hover-bg: #F43F5E; --giveup-button-active-bg: #E11D48; --next-button-bg: #2DD4BF; --next-button-hover-bg: #14B8A6; --next-button-active-bg: #0D9488; --result-area-bg: #A5F3FC; --result-area-border: #67E8F9; --result-area-shadow: #22D3EE; --result-text-color: #164E63; --explanation-text-color: #0E7490; --correct-text-color: #059669; --incorrect-text-color: #E11D48; --thinking-text-color: #155E75; --heading-color: #0C4A6E; --subheading-color: #155E75; --puzzle-text-color: #083344; --label-color: #155E75; --footer-text-color: #0369A1; --focus-ring-color: var(--submit-button-bg); --theme-selector-bg: #A5F3FC; --theme-selector-border: #67E8F9; --theme-selector-text: #155E75; }
+        body[data-theme="forest-green"] { --bg-color: #F0FFF4; --main-container-bg: #ffffff; --main-container-border: #2F855A; --main-container-shadow: #2F855A; --card-bg: #FEFCBF; --card-border: #F6E05E; --card-shadow: #ECC94B; --input-bg: #FFF; --input-border: #F6E05E; --input-text: #744210; --input-focus-ring: #A3E635; --action-button-border: #276749; --action-button-shadow: #276749; --action-button-hover-shadow: #22543D; --action-button-active-shadow: #276749; --submit-button-bg: #A3E635; --submit-button-hover-bg: #84CC16; --submit-button-active-bg: #65A30D; --giveup-button-bg: #F56565; --giveup-button-hover-bg: #E53E3E; --giveup-button-active-bg: #C53030; --next-button-bg: #4ADE80; --next-button-hover-bg: #22C55E; --next-button-active-bg: #16A34A; --result-area-bg: #A7F3D0; --result-area-border: #6EE7B7; --result-area-shadow: #34D399; --result-text-color: #047857; --explanation-text-color: #064E3B; --correct-text-color: #16A34A; --incorrect-text-color: #C53030; --thinking-text-color: #065F46; --heading-color: #2F855A; --subheading-color: #276749; --puzzle-text-color: #064E3B; --label-color: #276749; --footer-text-color: #718096; --focus-ring-color: var(--submit-button-bg); --theme-selector-bg: #FEFCBF; --theme-selector-border: #F6E05E; --theme-selector-text: #B7791F; }
+        body[data-theme="cosmic-purple"] { --bg-color: #FAF5FF; --main-container-bg: #1E1B4B; --main-container-border: #A78BFA; --main-container-shadow: #A78BFA; --card-bg: #3730A3; --card-border: #C4B5FD; --card-shadow: #A78BFA; --input-bg: #4338CA; --input-border: #A78BFA; --input-text: #EEF2FF; --input-focus-ring: #F472B6; --action-button-text: #1E1B4B; --action-button-border: #A78BFA; --action-button-shadow: #A78BFA; --action-button-hover-shadow: #A78BFA; --action-button-active-shadow: #A78BFA; --submit-button-bg: #F472B6; --submit-button-hover-bg: #EC4899; --submit-button-active-bg: #DB2777; --giveup-button-bg: #F87171; --giveup-button-hover-bg: #EF4444; --giveup-button-active-bg: #DC2626; --next-button-bg: #A78BFA; --next-button-hover-bg: #8B5CF6; --next-button-active-bg: #7C3AED; --result-area-bg: #4338CA; --result-area-border: #A78BFA; --result-area-shadow: #A78BFA; --result-text-color: #C4B5FD; --explanation-text-color: #DDD6FE; --correct-text-color: #A7F3D0; --incorrect-text-color: #FCA5A5; --thinking-text-color: #A78BFA; --heading-color: #EDE9FE; --subheading-color: #C4B5FD; --puzzle-text-color: #EDE9FE; --label-color: #C4B5FD; --footer-text-color: #A78BFA; --focus-ring-color: var(--submit-button-bg); --theme-selector-bg: #4338CA; --theme-selector-border: #A78BFA; --theme-selector-text: #EEF2FF; }
+        body[data-theme="sunny-yellow"] { --bg-color: #FEF9C3; --main-container-bg: #ffffff; --main-container-border: #CA8A04; --main-container-shadow: #CA8A04; --card-bg: #FEF08A; --card-border: #FACC15; --card-shadow: #EAB308; --input-bg: #FFF; --input-border: #FACC15; --input-text: #78350F; --input-focus-ring: #FB923C; --action-button-border: #CA8A04; --action-button-shadow: #CA8A04; --action-button-hover-shadow: #CA8A04; --action-button-active-shadow: #CA8A04; --submit-button-bg: #FB923C; --submit-button-hover-bg: #F97316; --submit-button-active-bg: #EA580C; --giveup-button-bg: #F87171; --giveup-button-hover-bg: #EF4444; --giveup-button-active-bg: #DC2626; --next-button-bg: #FACC15; --next-button-hover-bg: #EAB308; --next-button-active-bg: #CA8A04; --result-area-bg: #FEF3C7; --result-area-border: #FDE047; --result-area-shadow: #EAB308; --result-text-color: #854D0E; --explanation-text-color: #713F12; --correct-text-color: #16A34A; --incorrect-text-color: #DC2626; --thinking-text-color: #A16207; --heading-color: #B45309; --subheading-color: #A16207; --puzzle-text-color: #78350F; --label-color: #A16207; --footer-text-color: #B45309; --focus-ring-color: var(--submit-button-bg); --theme-selector-bg: #FEF3C7; --theme-selector-border: #FDE047; --theme-selector-text: #854D0E; }
+        body[data-theme="candy-pink"] { --bg-color: #FDF2F8; --main-container-bg: #ffffff; --main-container-border: #9D174D; --main-container-shadow: #9D174D; --card-bg: #FCE7F3; --card-border: #F9A8D4; --card-shadow: #F472B6; --input-bg: #FFF; --input-border: #F9A8D4; --input-text: #831843; --input-focus-ring: #A78BFA; --action-button-border: #9D174D; --action-button-shadow: #9D174D; --action-button-hover-shadow: #9D174D; --action-button-active-shadow: #9D174D; --submit-button-bg: #A78BFA; --submit-button-hover-bg: #8B5CF6; --submit-button-active-bg: #7C3AED; --giveup-button-bg: #FB7185; --giveup-button-hover-bg: #F43F5E; --giveup-button-active-bg: #E11D48; --next-button-bg: #F472B6; --next-button-hover-bg: #EC4899; --next-button-active-bg: #DB2777; --result-area-bg: #FBCFE8; --result-area-border: #F9A8D4; --result-area-shadow: #F472B6; --result-text-color: #9D174D; --explanation-text-color: #831843; --correct-text-color: #059669; --incorrect-text-color: #E11D48; --thinking-text-color: #BE185D; --heading-color: #831843; --subheading-color: #BE185D; --puzzle-text-color: #831843; --label-color: #BE185D; --footer-text-color: #9D174D; --focus-ring-color: var(--submit-button-bg); --theme-selector-bg: #FBCFE8; --theme-selector-border: #F9A8D4; --theme-selector-text: #9D174D; }
+        body[data-theme="night-mode"] { --bg-color: #111827; --main-container-bg: #1F2937; --main-container-border: #6B7280; --main-container-shadow: #9CA3AF; --card-bg: #374151; --card-border: #9CA3AF; --card-shadow: #D1D5DB; --input-bg: #4B5563; --input-border: #9CA3AF; --input-text: #F9FAFB; --input-focus-ring: #60A5FA; --action-button-text: #111827; --action-button-border: #9CA3AF; --action-button-shadow: #9CA3AF; --action-button-hover-shadow: #D1D5DB; --action-button-active-shadow: #6B7280; --submit-button-bg: #60A5FA; --submit-button-hover-bg: #3B82F6; --submit-button-active-bg: #2563EB; --giveup-button-bg: #F87171; --giveup-button-hover-bg: #EF4444; --giveup-button-active-bg: #DC2626; --next-button-bg: #34D399; --next-button-hover-bg: #10B981; --next-button-active-bg: #059669; --result-area-bg: #4B5563; --result-area-border: #9CA3AF; --result-area-shadow: #D1D5DB; --result-text-color: #ECFDF5; --explanation-text-color: #E5E7EB; --correct-text-color: #6EE7B7; --incorrect-text-color: #FCA5A5; --thinking-text-color: #D1D5DB; --heading-color: #F9FAFB; --subheading-color: #E5E7EB; --puzzle-text-color: #F3F4F6; --label-color: #E5E7EB; --footer-text-color: #9CA3AF; --focus-ring-color: var(--submit-button-bg); --theme-selector-bg: #4B5563; --theme-selector-border: #9CA3AF; --theme-selector-text: #F9FAFB; }
+
+        /* --- General Styles --- */
+        html, body { height: 100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding-top: 5rem; /* Space for theme selector */
+            position: relative;
+            transition: background-color 0.3s ease;
+            overflow-x: hidden;
+        }
+        main { flex-grow: 1; display: flex; flex-direction: column; align-items: center; }
+
+        .main-container {
+            background-color: var(--main-container-bg);
+            border: 3px solid var(--main-container-border);
+            border-radius: 20px;
+            box-shadow: 8px 8px 0px var(--main-container-shadow);
+            width: 100%;
+            max-width: 48rem; /* Moderate width */
+            margin: 2rem auto 1rem auto; /* Default margin */
+            padding: 1.5rem sm:p-8;
+            text-align: center;
+            flex-shrink: 0;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Card Styling */
+        .puzzle-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 4px 4px 0px var(--card-shadow);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Puzzle Text */
+        #puzzleText {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--puzzle-text-color);
+            background-color: rgba(0,0,0,0.03); /* Subtle background */
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            line-height: 1.7; /* Improve readability */
+            white-space: pre-wrap; /* Preserve line breaks in riddles */
+            text-align: center; /* Center riddle text */
+        }
+
+
+        /* Input Styling */
+        #answerInput {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--input-border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.06);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        #answerInput:focus {
+            outline: none;
+            border-color: var(--input-focus-ring);
+            box-shadow: inset 2px 2px 4px rgba(0,0,0,0.06), 0 0 0 3px var(--bg-color), 0 0 0 5px var(--input-focus-ring);
+        }
+
+
+        /* Action Button Styles */
+        .action-button {
+            color: var(--action-button-text); font-weight: 700; padding: 0.8rem 1.8rem; border-radius: 1rem; border: 3px solid var(--action-button-border); box-shadow: 5px 5px 0px var(--action-button-shadow); transition: all 0.15s ease-out; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-size: 1rem; min-width: 120px; transform-style: preserve-3d;
+        }
+        .action-button:hover:not(:disabled) { box-shadow: 6px 6px 0px var(--action-button-hover-shadow); transform: translateY(-3px) translateX(-2px) translateZ(5px); }
+        .action-button:active:not(:disabled) { box-shadow: 2px 2px 0px var(--action-button-active-shadow); transform: translateY(2px) translateX(2px) translateZ(0px); }
+        .action-button:focus { outline: none; box-shadow: 5px 5px 0px var(--action-button-shadow), 0 0 0 3px var(--bg-color), 0 0 0 5px var(--focus-ring-color); }
+        .action-button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: 5px 5px 0px var(--action-button-shadow); transform: none; }
+
+        #submitBtn { background-color: var(--submit-button-bg); border-color: var(--action-button-border); box-shadow: 5px 5px 0px var(--action-button-shadow); --focus-ring-color: var(--submit-button-bg); }
+        #submitBtn:hover:not(:disabled) { background-color: var(--submit-button-hover-bg); box-shadow: 6px 6px 0px var(--action-button-hover-shadow); }
+        #submitBtn:active:not(:disabled) { background-color: var(--submit-button-active-bg); box-shadow: 2px 2px 0px var(--action-button-active-shadow); }
+
+        #giveUpBtn { background-color: var(--giveup-button-bg); border-color: var(--action-button-border); box-shadow: 5px 5px 0px var(--action-button-shadow); --focus-ring-color: var(--giveup-button-bg); }
+        #giveUpBtn:hover:not(:disabled) { background-color: var(--giveup-button-hover-bg); box-shadow: 6px 6px 0px var(--action-button-hover-shadow); }
+        #giveUpBtn:active:not(:disabled) { background-color: var(--giveup-button-active-bg); box-shadow: 2px 2px 0px var(--action-button-active-shadow); }
+
+        #nextBtn { background-color: var(--next-button-bg); border-color: var(--action-button-border); box-shadow: 5px 5px 0px var(--action-button-shadow); --focus-ring-color: var(--next-button-bg); }
+        #nextBtn:hover:not(:disabled) { background-color: var(--next-button-hover-bg); box-shadow: 6px 6px 0px var(--action-button-hover-shadow); }
+        #nextBtn:active:not(:disabled) { background-color: var(--next-button-active-bg); box-shadow: 2px 2px 0px var(--action-button-active-shadow); }
+
+        #resetBtn { background-color: var(--reset-button-bg); border-color: var(--action-button-border); box-shadow: 5px 5px 0px var(--action-button-shadow); --focus-ring-color: var(--reset-button-bg); }
+        #resetBtn:hover { background-color: var(--reset-button-hover-bg); box-shadow: 6px 6px 0px var(--action-button-hover-shadow); }
+        #resetBtn:active { background-color: var(--reset-button-active-bg); box-shadow: 2px 2px 0px var(--action-button-active-shadow); }
+
+
+        /* Result Area Styles */
+        #resultArea {
+            background-color: var(--result-area-bg); border: 2px dashed var(--result-area-border); border-radius: 16px; box-shadow: 4px 4px 0px var(--result-area-shadow); padding: 1.5rem; margin-top: 2rem; min-height: 150px; text-align: center; transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; opacity: 0; transform: scale(0.9) rotate(-2deg); display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #resultArea.visible { opacity: 1; transform: scale(1) rotate(0deg); animation: reveal 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+        #feedbackText { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; transition: color 0.3s ease; line-height: 1.4; }
+        #feedbackText.correct { color: var(--correct-text-color); }
+        #feedbackText.incorrect { color: var(--incorrect-text-color); }
+        #explanationText { font-size: 1rem; font-weight: 500; margin-top: 0.5rem; color: var(--explanation-text-color); background-color: rgba(0, 0, 0, 0.05); padding: 0.75rem 1rem; border-radius: 8px; max-width: 90%; }
+        #thinkingText { font-style: italic; color: var(--thinking-text-color); transition: color 0.3s ease; font-size: 1.1rem; margin-bottom: 1rem; }
+
+        /* Headings & Labels */
+        .main-heading { color: var(--heading-color); transition: color 0.3s ease; padding-top: 1rem; /* Default padding */ }
+        .sub-heading { color: var(--subheading-color); transition: color 0.3s ease; font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; }
+
+        /* Footer Styling */
+        .page-footer { text-align: center; padding: 1rem 0; margin-top: 1rem; font-size: 0.8rem; color: var(--footer-text-color); flex-shrink: 0; line-height: 1.5; transition: color 0.3s ease; }
+        .page-footer p { margin-bottom: 0.25rem; }
+
+        /* Theme Selector Styles */
+        .theme-selector-container { position: absolute; top: 1rem; right: 1rem; z-index: 10; }
+        .theme-selector-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+        #themeSelector { padding: 0.4rem 0.8rem; border-radius: 8px; border: 2px solid var(--theme-selector-border); background-color: var(--theme-selector-bg); color: var(--theme-selector-text); font-weight: 500; cursor: pointer; box-shadow: 2px 2px 0px var(--theme-selector-border); transition: all 0.2s ease; vertical-align: middle; font-size: 0.8rem; }
+        #themeSelector:focus { outline: none; box-shadow: 2px 2px 0px var(--theme-selector-border), 0 0 0 3px var(--main-container-bg), 0 0 0 5px var(--theme-selector-border); }
+
+        /* Dark Theme Adjustments */
+        body[data-theme="cosmic-purple"] .main-heading svg,
+        body[data-theme="night-mode"] .main-heading svg { color: #F687B3; /* pink-400 */ }
+        body[data-theme="cosmic-purple"] .sub-heading,
+        body[data-theme="night-mode"] .sub-heading { color: #D1D5DB; }
+        body[data-theme="cosmic-purple"] #themeSelector:focus,
+        body[data-theme="night-mode"] #themeSelector:focus { box-shadow: 2px 2px 0px var(--theme-selector-border), 0 0 0 3px var(--main-container-bg), 0 0 0 5px var(--theme-selector-border); }
+        body[data-theme="cosmic-purple"] #explanationText,
+        body[data-theme="night-mode"] #explanationText { background-color: rgba(0, 0, 0, 0.2); color: #E5E7EB; }
+        body[data-theme="night-mode"] #puzzleText { background-color: rgba(255,255,255,0.05); }
+        body[data-theme="night-mode"] #answerInput { background-color: #4B5563; color: #F9FAFB; }
+
+
+        /* Hide class utility */
+        .hidden { display: none; }
+
+        /* Animation for result reveal */
+        @keyframes reveal { from { transform: scale(0.8) rotate(-5deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div class="theme-selector-container">
+        <label for="themeSelector" class="theme-selector-label">Choose a Theme:</label>
+        <select id="themeSelector">
+            <option value="default">🎨 Default</option>
+            <option value="ocean-blue">🌊 Ocean Blue</option>
+            <option value="forest-green">🌲 Forest Green</option>
+            <option value="cosmic-purple">✨ Cosmic Purple</option>
+            <option value="sunny-yellow">☀️ Sunny Yellow</option>
+            <option value="candy-pink">🍬 Candy Pink</option>
+            <option value="night-mode">🌙 Night Mode</option>
+        </select>
+    </div>
+
+    <main>
+        <div class="main-container">
+            <h1 class="main-heading text-3xl sm:text-4xl font-bold text-center mb-4 tracking-tight flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-9 h-9 text-green-700">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.368a14.977 14.977 0 01-4.5 0m4.5 0v.75c0 .621-.504 1.125-1.125 1.125h-1.5c-.621 0-1.125-.504-1.125-1.125v-.75m3.75 0c.621 0 1.125.504 1.125 1.125v.75c0 .621-.504 1.125-1.125 1.125h-1.5c-.621 0-1.125-.504-1.125-1.125v-.75m-6.75-4.125a2.25 2.25 0 113.75 0 2.25 2.25 0 01-3.75 0zM6.75 19.5a2.25 2.25 0 002.25 2.25h1.5c.621 0 1.125-.504 1.125-1.125v-.75" />
+                </svg>
+                 AI Riddle Generator <span class="text-2xl">❓</span>
+            </h1>
+
+            <p class="sub-heading text-center mb-8">Can you solve this riddle? Type your answer below. If you get stuck, click "Give Up?".</p>
+
+            <div id="puzzleArea">
+                <div class="puzzle-card">
+                    <p id="puzzleText" class="whitespace-pre-wrap font-mono text-lg">RIDDLE GOES HERE</p>
+                    <div class="mt-6">
+                        <label for="answerInput" class="label-color font-semibold mb-2 block">Your Answer:</label>
+                        <input type="text" id="answerInput" placeholder="Type your answer..." class="block">
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+                        <button id="submitBtn" class="action-button submit-button" disabled>Submit Answer ✅</button>
+                        <button id="giveUpBtn" class="action-button giveup-button">Give Up? 🤔</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultArea" class="hidden">
+                <p id="thinkingText">...</p>
+                <p id="feedbackText"></p>
+                <p id="explanationText" class="hidden"></p>
+                <div class="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="nextBtn" class="action-button next-button hidden">Next Riddle 👉</button>
+                    <button id="resetBtn" class="action-button reset-button hidden">Play Again? 🔁</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        <p>© 2025 ToolForge. All rights reserved.</p>
+        <p>Built with ❤️ by Anas.</p>
+    </footer>
+
+    <script>
+        // --- DOM Elements ---
+        const puzzleAreaDiv = document.getElementById('puzzleArea');
+        const puzzleText = document.getElementById('puzzleText');
+        const answerInput = document.getElementById('answerInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const giveUpBtn = document.getElementById('giveUpBtn');
+        const resultArea = document.getElementById('resultArea');
+        const thinkingText = document.getElementById('thinkingText');
+        const feedbackText = document.getElementById('feedbackText');
+        const explanationText = document.getElementById('explanationText');
+        const nextBtn = document.getElementById('nextBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const themeSelector = document.getElementById('themeSelector');
+
+        // --- Game State ---
+        let currentPuzzleIndex = 0;
+        let currentPuzzle; // Holds the current puzzle object
+        let score = 0; // Optional
+        let puzzlesShownInSession = []; // Keep track of shown puzzles to avoid immediate repeats
+
+        // --- Puzzle Data (Expanded to 50+) ---
+        const puzzles = [
+            // Original Set
+            { riddle: "What has an eye, but cannot see?", answer: ["Needle", "A needle", "Potato", "A potato", "Storm", "A storm", "Hurricane"], explanation: "Needles, potatoes, and storms all have 'eyes'." },
+            { riddle: "What is always in front of you but can’t be seen?", answer: ["Future", "The future"], explanation: "The future is always ahead, but invisible." },
+            { riddle: "What can you catch, but not throw?", answer: ["Cold", "A cold", "Flu", "A flu", "Sickness"], explanation: "You can catch a cold, but you can't throw it." },
+            { riddle: "What has to be broken before you can use it?", answer: ["Egg", "An egg"], explanation: "You need to break an egg to use it." },
+            { riddle: "What goes up but never comes down?", answer: ["Age", "Your age"], explanation: "Your age only goes up!" },
+            { riddle: "What is full of holes but still holds water?", answer: ["Sponge", "A sponge"], explanation: "A sponge absorbs water despite being porous." },
+            { riddle: "What can travel all around the world while staying in a corner?", answer: ["Stamp", "A stamp"], explanation: "A stamp stays on the corner of an envelope." },
+            { riddle: "What has one head, one foot, and four legs?", answer: ["Bed", "A bed"], explanation: "A bed has a headboard, footboard, and legs." },
+            { riddle: "What question can you never answer yes to?", answer: ["Are you asleep yet?", "Are you asleep"], explanation: "If you answer 'yes', you aren't asleep." },
+            { riddle: "What is black when you buy it, red when you use it, and gray when you throw it away?", answer: ["Charcoal"], explanation: "Charcoal starts black, glows red when hot, and turns to gray ash." },
+            { riddle: "What has words, but never speaks?", answer: ["Book", "A book"], explanation: "A book contains words but doesn't speak." },
+            { riddle: "What invention lets you look right through a wall?", answer: ["Window", "A window"], explanation: "A window lets you see through a wall." },
+            { riddle: "What can you hold in your right hand, but never in your left hand?", answer: ["Left elbow", "Your left elbow", "My left elbow"], explanation: "You can't hold your own left elbow with your left hand." },
+            { riddle: "What gets wetter as it dries?", answer: ["Towel", "A towel"], explanation: "A towel absorbs moisture, getting wetter as it dries something else." },
+            { riddle: "What belongs to you, but other people use it more than you do?", answer: ["Name", "Your name", "My name"], explanation: "Others use your name more often than you say it yourself." },
+            { riddle: "What has a neck without a head?", answer: ["Bottle", "A bottle", "Jar", "A jar"], explanation: "Bottles and jars have necks." },
+            { riddle: "What is so fragile that saying its name breaks it?", answer: ["Silence"], explanation: "Speaking the word 'silence' breaks the silence." },
+            { riddle: "What begins with T, ends with T, and has T in it?", answer: ["Teapot", "A teapot"], explanation: "Teapot starts with T, ends with T, and contains 'tea'." },
+            { riddle: "What runs around the whole yard without moving?", answer: ["Fence", "A fence"], explanation: "A fence encloses the yard but doesn't move." },
+            { riddle: "What has one thumb and four fingers but is not alive?", answer: ["Glove", "A glove"], explanation: "A glove has finger and thumb slots." },
+            { riddle: "What is always answered without being asked a question?", answer: ["Doorbell", "A doorbell", "Phone", "A phone"], explanation: "You answer a doorbell or phone when it rings." },
+            { riddle: "What has cities, but no houses, forests, but no trees, and water, but no fish?", answer: ["Map", "A map"], explanation: "A map represents these features." },
+            { riddle: "I have lakes with no water, mountains with no stone, and cities with no buildings. What am I?", answer: ["Map", "A map"], explanation: "Another map riddle!" },
+            { riddle: "What comes once in a minute, twice in a moment, but never in a thousand years?", answer: ["Letter M", "The letter M", "M"], explanation: "The letter 'M' appears once in 'minute', twice in 'moment'." },
+            { riddle: "What is lighter than a feather, but the strongest person can't hold it for much more than a minute?", answer: ["Breath", "Your breath", "My breath"], explanation: "You can't hold your breath for very long." },
+            { riddle: "The more you take, the more you leave behind. What are they?", answer: ["Footsteps", "Steps"], explanation: "Every step you take leaves a footprint behind." },
+            { riddle: "What building has the most stories?", answer: ["Library", "A library"], explanation: "A library contains many stories (books)." },
+            { riddle: "What has a bottom at the top?", answer: ["Legs", "Your legs"], explanation: "Your legs have 'bottoms' (feet) at the top relative to the ground when standing." },
+            { riddle: "What has four wheels and flies?", answer: ["Garbage truck", "A garbage truck"], explanation: "A garbage truck has wheels, and 'flies' (insects) are often around it." },
+            { riddle: "What is always hungry and must always be fed, The finger it touches, Will soon turn red?", answer: ["Fire"], explanation: "Fire consumes fuel (is hungry) and can burn (turn red)." },
+            { riddle: "What can fill a room but takes up no space?", answer: ["Light"], explanation: "Light fills a space but has no volume." },
+            { riddle: "What disappears as soon as you say its name?", answer: ["Silence"], explanation: "Saying 'silence' breaks it. (Similar to another riddle)." },
+            { riddle: "What has a thousand needles but cannot sew?", answer: ["Pine tree", "A pine tree", "Porcupine", "A porcupine"], explanation: "Pine trees and porcupines have needle-like parts." },
+            // Added Riddles
+            { riddle: "What is seen in the middle of March and April that can’t be seen at the beginning or end of either month?", answer: ["Letter R", "The letter R", "R"], explanation: "The letter 'R' is in the middle of 'March' and 'April'." },
+            { riddle: "What is made of water but if you put it into water it will die?", answer: ["Ice", "An ice cube"], explanation: "Ice is frozen water and melts in warmer water." },
+            { riddle: "What is at the end of a rainbow?", answer: ["Letter W", "The letter W", "W"], explanation: "The word 'rainbow' ends with the letter W." },
+            { riddle: "What has one head, a tail, is brown, and has no legs?", answer: ["Penny", "A penny", "Coin"], explanation: "A penny has a 'head' side and a 'tail' side and is brown." },
+            { riddle: "What is easy to get into but hard to get out of?", answer: ["Trouble"], explanation: "It's easy to get into trouble, harder to get out." },
+            { riddle: "What can you keep after giving to someone?", answer: ["Your word", "Word", "Promise"], explanation: "You keep your word even after giving it." },
+            { riddle: "What is always running but never walks, often murmurs, never talks, has a bed but never sleeps, has a mouth but never eats?", answer: ["River", "A river"], explanation: "Describes the characteristics of a river." },
+            { riddle: "What has many keys but can’t open a single lock?", answer: ["Piano", "A piano", "Keyboard"], explanation: "A piano or keyboard has keys you press." },
+            { riddle: "What can you break, even if you never pick it up or touch it?", answer: ["Promise", "A promise"], explanation: "You can break a promise without physically touching anything." },
+            { riddle: "What goes through cities and fields, but never moves?", answer: ["Road", "A road", "Path"], explanation: "A road passes through places but stays still." },
+            { riddle: "What has a thumb and four fingers but is not a hand?", answer: ["Glove", "A glove"], explanation: "A glove fits a hand." },
+            { riddle: "What is white when it’s dirty and black when it’s clean?", answer: ["Chalkboard", "A chalkboard", "Blackboard"], explanation: "A chalkboard is black, but gets covered in white chalk dust when used (dirty)." },
+            { riddle: "What gets bigger the more you take away?", answer: ["Hole", "A hole"], explanation: "Digging a hole makes it bigger." },
+            { riddle: "What has a heart that doesn’t beat?", answer: ["Artichoke", "An artichoke", "Lettuce", "Celery"], explanation: "Artichokes (and some other vegetables) have a central 'heart'." },
+            { riddle: "What is always spelled wrong?", answer: ["Wrong", "Wrongly"], explanation: "The word 'wrong' itself is spelled W-R-O-N-G." },
+            { riddle: "What can be measured but has no length, width, or height?", answer: ["Temperature"], explanation: "Temperature is measured in degrees, not dimensions." },
+            { riddle: "What has cities without people, forests without trees, and oceans without water?", answer: ["Map", "A map"], explanation: "A map shows representations, not the real things." },
+            { riddle: "What has two hands but cannot clap?", answer: ["Clock", "A clock"], explanation: "A clock has hour and minute hands." },
+            { riddle: "What can you find in a kitchen, has a tongue, but cannot talk?", answer: ["Shoe", "A shoe"], explanation: "A shoe has a tongue." },
+            { riddle: "What has many teeth but cannot bite?", answer: ["Comb", "A comb"], explanation: "A comb has teeth for hair." },
+            { riddle: "What has a ring but no finger?", answer: ["Telephone", "A telephone", "Phone", "A phone"], explanation: "A telephone rings." },
+            { riddle: "What is full of keys but opens no doors?", answer: ["Piano", "A piano", "Keyboard"], explanation: "Musical keys or computer keys." },
+            { riddle: "What has to be broken before it can be eaten?", answer: ["Egg", "An egg", "Coconut", "A coconut", "Nuts"], explanation: "Eggs, coconuts, and nuts need their shells broken." }
+        ];
+
+        // --- Functions ---
+
+        /** Shuffles array in place. Fisher-Yates algorithm. */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        /** Selects and displays the next available riddle */
+        function displayNextRiddle() {
+            if (puzzlesShownInSession.length >= puzzles.length) {
+                // Reshuffle if all puzzles have been shown in this session
+                puzzlesShownInSession = [];
+                shuffleArray(puzzles);
+                console.log("Reshuffling puzzles for new cycle.");
+            }
+
+            // Find the next puzzle not already shown in this session
+            let nextPuzzleFound = false;
+            for (let i = 0; i < puzzles.length; i++) {
+                 // Use the index from the (potentially shuffled) main array
+                 // Find a puzzle whose riddle hasn't been shown yet
+                if (!puzzlesShownInSession.includes(puzzles[i].riddle)) {
+                    currentPuzzleIndex = i; // Store the index in the main array
+                    nextPuzzleFound = true;
+                    break;
+                }
+            }
+
+            // Fallback if all puzzles were somehow marked as shown
+            if (!nextPuzzleFound) {
+                 currentPuzzleIndex = 0; // Just show the first one again
+                 puzzlesShownInSession = []; // Reset session tracking
+                 console.log("Fallback: Resetting session tracking.");
+            }
+
+            currentPuzzle = puzzles[currentPuzzleIndex];
+            puzzlesShownInSession.push(currentPuzzle.riddle); // Mark as shown
+
+            puzzleText.textContent = currentPuzzle.riddle;
+            answerInput.value = '';
+            answerInput.disabled = false;
+            submitBtn.disabled = true;
+            giveUpBtn.disabled = false;
+
+            puzzleAreaDiv.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            resultArea.classList.remove('visible');
+            nextBtn.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+        }
+
+
+        /** Handles input in the answer field to enable/disable submit */
+        function handleInputChange() {
+            submitBtn.disabled = answerInput.value.trim() === '';
+        }
+
+        /** Checks the submitted answer */
+        function checkAnswer(gaveUp = false) {
+            const userAnswer = answerInput.value.trim();
+            if (userAnswer === '' && !gaveUp) return;
+
+            const correctAnswers = Array.isArray(currentPuzzle.answer) ?
+                                   currentPuzzle.answer.map(a => a.toLowerCase()) :
+                                   [currentPuzzle.answer.toLowerCase()];
+            const isCorrect = !gaveUp && correctAnswers.includes(userAnswer.toLowerCase());
+
+            answerInput.disabled = true;
+            submitBtn.disabled = true;
+            giveUpBtn.disabled = true;
+
+            puzzleAreaDiv.classList.add('hidden');
+            resultArea.classList.remove('hidden');
+            thinkingText.style.display = 'none'; // No thinking needed
+            explanationText.classList.add('hidden');
+            resultArea.classList.remove('visible');
+
+            if (gaveUp) {
+                 feedbackText.textContent = "Okay, here's the answer! 🤔";
+                 feedbackText.className = ''; // Neutral style
+            } else if (isCorrect) {
+                feedbackText.textContent = "You got it! Brilliant! 🎉";
+                feedbackText.className = 'correct';
+                score++; // Optional scoring
+            } else {
+                feedbackText.textContent = "Not quite! Tricky one, right? 😅";
+                feedbackText.className = 'incorrect';
+            }
+
+             // Always show explanation after guess or giving up
+            // Display the first answer in the array as the primary answer
+            const displayAnswer = Array.isArray(currentPuzzle.answer) ? currentPuzzle.answer[0] : currentPuzzle.answer;
+            explanationText.textContent = `💡 Answer: ${displayAnswer}. Explanation: ${currentPuzzle.explanation}`;
+            explanationText.classList.remove('hidden');
+
+
+            nextBtn.classList.remove('hidden'); // Always show next button after reveal
+            resetBtn.classList.add('hidden'); // Keep overall reset hidden until end?
+
+            resultArea.classList.add('visible');
+        }
+
+
+        /** Resets the game */
+        function resetGame() {
+            score = 0; // Reset score
+            puzzlesShownInSession = []; // Reset session tracking
+            shuffleArray(puzzles); // Reshuffle for a fresh start
+            displayNextRiddle(); // Display the first riddle of the new shuffled set
+        }
+
+        // --- Theme Switching Logic (With localStorage) ---
+        function applyTheme(themeName) {
+            document.body.dataset.theme = themeName;
+            try { localStorage.setItem('riddleTheme', themeName); }
+            catch (e) { console.warn("Could not save theme preference:", e); }
+        }
+
+        function loadSavedTheme() {
+            let savedTheme = 'default';
+            try { savedTheme = localStorage.getItem('riddleTheme') || 'default'; }
+            catch (e) { console.warn("Could not load theme preference:", e); }
+            themeSelector.value = savedTheme;
+            applyTheme(savedTheme);
+        }
+
+        themeSelector.addEventListener('change', (event) => applyTheme(event.target.value));
+
+        // --- Event Listeners ---
+        answerInput.addEventListener('input', handleInputChange);
+        answerInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !submitBtn.disabled) {
+                checkAnswer();
+            }
+        });
+        submitBtn.addEventListener('click', () => checkAnswer(false));
+        giveUpBtn.addEventListener('click', () => checkAnswer(true)); // Pass true for gaveUp
+        nextBtn.addEventListener('click', displayNextRiddle); // Changed from loadNextPuzzle
+        resetBtn.addEventListener('click', resetGame); // Keep reset button functionality
+
+        // --- Initial Load ---
+        loadSavedTheme();
+        resetGame(); // Initialize game state and display first puzzle
+
+    </script>
+
+</body>
+</html>
